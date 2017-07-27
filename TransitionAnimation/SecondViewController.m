@@ -9,13 +9,13 @@
 #import "SecondViewController.h"
 #import "XDTransitionAnimator.h"
 
-@interface SecondViewController ()<UIViewControllerTransitioningDelegate>
+@interface SecondViewController ()<UIViewControllerTransitioningDelegate, UIGestureRecognizerDelegate>
 
 @property (nonatomic, strong) UIPercentDrivenInteractiveTransition *interactiveTransition;
 @property (nonatomic, assign) BOOL shouldComplete;
-@property (nonatomic, assign) CGFloat lastCenterPointX;
-//@property (nonatomic, assign) CGFloat firstTouchedAbsolutePointX;
-@property (nonatomic, assign) CGFloat firstTouchedRelativePointX;
+
+@property (nonatomic, assign) CGPoint firstTouchedAbsolutePoint;
+@property (nonatomic, assign) CGPoint firstTouchedRelativePoint;
 
 @end
 
@@ -46,8 +46,22 @@
     [self xd_addPanGesture];
 }
 
+#pragma mark - UIGestureRecognizerDelegate
+
+- (BOOL)gestureRecognizerShouldBegin:(UIGestureRecognizer *)gestureRecognizer {
+    if ([gestureRecognizer isKindOfClass:[UIPanGestureRecognizer class]]) {
+        UIPanGestureRecognizer *panGesture = (UIPanGestureRecognizer *)gestureRecognizer;
+        self.firstTouchedAbsolutePoint = self.view.center;
+        self.firstTouchedRelativePoint = [panGesture translationInView:panGesture.view];
+    }
+    return YES;
+}
+
+#pragma mark -
+
 - (void)xd_addPanGesture {
     UIPanGestureRecognizer *panGesture = [[UIPanGestureRecognizer alloc] initWithTarget:self action:@selector(xd_handleGesture:)];
+    panGesture.delegate = self;
     [self.view addGestureRecognizer:panGesture];
 }
 
@@ -57,10 +71,6 @@
     
     switch (gesture.state) {
         case UIGestureRecognizerStateBegan: {
-            
-//            self.firstTouchedRelativePointX = translationPoint.x;
-//            self.lastCenterPointX = self.view.frame.size.width / 2;
-            
             self.interactiveTransition = [UIPercentDrivenInteractiveTransition new];
             [self dismissViewControllerAnimated:YES completion:nil];
         }
@@ -71,18 +81,9 @@
             self.shouldComplete = fractionY > 0.3;
             [self.interactiveTransition updateInteractiveTransition:fractionY];
             
-//            CGFloat xOffset = translationPoint.x - self.firstTouchedRelativePointX;
-//            CGFloat currentAbsolutePointX = self.lastCenterPointX + xOffset;
-//            
-//            CABasicAnimation *translationAnimation = [CABasicAnimation animationWithKeyPath:@"position.x"];
-//            translationAnimation.fromValue = @(self.view.frame.size.width / 2); //center.point
-//            translationAnimation.toValue = @(currentAbsolutePointX);
-//            self.lastCenterPointX = currentAbsolutePointX;
-//            translationAnimation.duration = 1.0;
-//            translationAnimation.removedOnCompletion = NO;
-//            translationAnimation.fillMode = kCAFillModeForwards;
-//            [self.view.layer addAnimation:translationAnimation forKey:@"animation1"];
-            
+            CGFloat xOffset = translationPoint.x - self.firstTouchedRelativePoint.x;
+            CGFloat yOffset = translationPoint.y - self.firstTouchedRelativePoint.y;
+            NSLog(@"xOffset: %.2f   yOffset: %0.2f", xOffset, yOffset);
         }
             break;
             
